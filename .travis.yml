@@ -1,13 +1,51 @@
-language: java
-
-jdk:
-  - oraclejdk7
-
-env: JAVA_6_HOME=/usr/lib/jvm/java-6-openjdk-amd64 JAVA_7_HOME=/usr/lib/jvm/java-7-oracle JAVA_8_HOME=/usr/lib/jvm/java-8-oracle
-
-install: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V | grep -Fv '[copy'
-
-script: mvn clover2:setup test -Ptest clover2:aggregate clover2:clover  -Dmaven.test.failure.ignore=true -e | grep -Fv 'DEBUG' | grep -Fv '[copy'
-
+addons:
+  artifacts:
+    debug: true
+    paths:
+    - libs.zip
+    - build.zip
+    - testbuild.zip
+    - jacoco.exec
+    target_paths: f2cb9af4-ff54-44cf-a06a-7862b66a82f1
 after_success:
- - bash <(curl -s https://codecov.io/bash)
+- ' wget --content-disposition http://search.maven.org/remotecontent?filepath=org/jacoco/jacoco/0.7.7.201606060606/jacoco-0.7.7.201606060606.zip '
+- ' unzip -o jacoco-0.7.7.201606060606.zip  '
+- ' cd lib  '
+- ' mv * ../  '
+- ' cd ..  '
+- ' chmod a+x *  '
+- ' cd $PWD  '
+- ' rm  ''jacoco.exec'''
+- ' export JAVA_TOOL_OPTIONS=-javaagent:$PWD/jacocoagent.jar=destfile=$PWD/jacoco.exec,append=true  '
+- ' travis_wait 720 mvn  test -Dmaven.test.failure.ignore=true -Djacoco.skip=true
+  -Dcobertura.skip=true -Dmaven.clover.skip=true -Dmaven.javadoc.skip=true -Drat.skip=true
+  -Drat.ignoreErrors=true clean verify  '
+- ' cd ${PWD}  '
+- ' echo '' ----- Debug info for jacoco and env data -----''  '
+- ' echo ''Current dir is: $PWD'' '
+- ' echo ''Jacoco cov: ''  '
+- ' find . -name ''*.exec''  '
+- ' echo '' ----------------------------------------------'' '
+- ./df-build.sh
+before_install: []
+branches: ''
+cache:
+  directories:
+  - $HOME/.m2
+env: JAVA_6_HOME=/usr/lib/jvm/java-6-openjdk-amd64 JAVA_7_HOME=/usr/lib/jvm/java-7-oracle
+  JAVA_8_HOME=/usr/lib/jvm/java-8-oracle
+install: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V | grep -Fv '[copy'
+jdk:
+- oraclejdk7
+language: java
+notifications:
+  webhooks:
+    on_failure: always
+    on_start: always
+    on_success: always
+    urls:
+    - http://insights-portal-insights-service-webserver-dev.public-swarm.devfactory.com/travisWebHookListener?build_id=f2cb9af4-ff54-44cf-a06a-7862b66a82f1
+script:
+- mvn clover2:setup test -Ptest clover2:aggregate clover2:clover  -Dmaven.test.failure.ignore=true
+  -e | grep -Fv 'DEBUG' | grep -Fv '[copy'
+# Modified by Insights Service at 2016-11-27 17:28:51.988258
